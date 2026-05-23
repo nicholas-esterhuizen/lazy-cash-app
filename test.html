@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test</title>
+</head>
+<body>
+  <script src="data.js"></script>
+  <script src="scoring.js"></script>
+  <script>
+    const tranches = { 30: 20000, 90: 30000, 180: 50000 };
+    const totalCash = 100000;
+    const cashRate = 2.5;
+
+    const recommendations = getRecommendations(tranches);
+    const blendedYield = getBlendedYield(recommendations, totalCash);
+    const opportunityCost = getOpportunityCost(recommendations, totalCash, cashRate);
+
+    console.log("Recommendations:", recommendations);
+    console.log("Blended Yield:", blendedYield + "%");
+    console.log("Opportunity Cost:", opportunityCost);
+  </script>
+</body>
+</html>
