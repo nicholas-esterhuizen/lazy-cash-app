@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Lazy Cash App</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0e0f0c;
+      --surface:   #161712;
+      --border:    #2a2b26;
+      --accent:    #c8f04a;
+      --accent-dim:#8aab28;
+      --text:      #e8e9e2;
+      --muted:     #6b6d62;
+      --warn:      #f0a94a;
+      --danger:    #f04a4a;
+      --mono:      'DM Mono', monospace;
+      --serif:     'Fraunces', serif;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 14px;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 2rem 3rem;
+      display: flex;
+      align-items: baseline;
+      gap: 1.5rem;
+    }
+
+    header h1 {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── LAYOUT ── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 3rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      main { grid-template-columns: 1fr; padding: 1.5rem; }
+      header { padding: 1.5rem; flex-direction: column; gap: 0.25rem; }
+    }
+
+    /* ── PANELS ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem;
+    }
+
+    .panel-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .panel-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── INPUTS ── */
+    .field { margin-bottom: 1.25rem; }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+      letter-spacing: 0.05em;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 1rem;
+      padding: 0.65rem 0.85rem;
+      outline: none;
+      transition: border-color 0.15s;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    input[type="number"]:focus { border-color: var(--accent); }
+
+    .input-prefix {
+      position: relative;
+    }
+
+    .input-prefix span {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .input-prefix input { padding-left: 1.75rem; }
+
+    /* ── TRANCHE VALIDATION ── */
+    .tranche-status {
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+      min-height: 1.2rem;
+      transition: color 0.2s;
+    }
+
+    .tranche-status.ok    { color: var(--accent); }
+    .tranche-status.over  { color: var(--danger); }
+    .tranche-status.under { color: var(--warn); }
+
+    /* ── CASH RATE ── */
+    .cash-rate-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .cash-rate-row label { margin: 0; white-space: nowrap; }
+
+    /* ── BUTTON ── */
+    button#run {
+      width: 100%;
+      margin-top: 1.75rem;
+      padding: 0.85rem;
+      background: var(--accent);
+      color: #0e0f0c;
+      border: none;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    button#run:hover { background: #d8ff55; }
+    button#run:active { transform: scale(0.99); }
+    button#run:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+    /* ── RESULTS AREA ── */
+    #results { grid-column: 1 / -1; display: none; }
+
+    #results.visible { display: block; }
+
+    /* ── SUMMARY BAR ── */
+    .summary-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      border: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+
+    .summary-stat {
+      padding: 1.5rem 2rem;
+      border-right: 1px solid var(--border);
+    }
+
+    .summary-stat:last-child { border-right: none; }
+
+    .summary-stat .stat-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .summary-stat .stat-value {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 300;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+    }
+
+    .summary-stat .stat-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    /* ── TRANCHE CARDS ── */
+    .tranche-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      margin-bottom: 2rem;
+    }
+
+    .tranche-card {
+      background: var(--surface);
+      padding: 1.75rem;
+    }
+
+    .tranche-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
+    }
+
+    .tranche-badge {
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--accent);
+      padding: 0.2rem 0.6rem;
+    }
+
+    .tranche-alloc {
+      font-family: var(--serif);
+      font-size: 1.3rem;
+      font-weight: 300;
+      font-style: italic;
+      color: var(--text);
+    }
+
+    .etf-ticker {
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.2rem;
+    }
+
+    .etf-name {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+      line-height: 1.4;
+    }
+
+    .etf-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .metric {
+      background: var(--bg);
+      padding: 0.6rem 0.75rem;
+    }
+
+    .metric-label {
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .metric-value {
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .metric-value.highlight { color: var(--accent); }
+
+    .projected-earnings {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .projected-earnings .pe-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .projected-earnings .pe-value {
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      color: var(--accent);
+    }
+
+    /* ── OPPORTUNITY COST TABLE ── */
+    .opp-table-wrap {
+      border: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+
+    .opp-table-wrap .panel-label {
+      padding: 1rem 1.5rem 0;
+      margin-bottom: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      text-align: left;
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 0.75rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.85rem 1.5rem;
+      font-size: 0.88rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    td.accent { color: var(--accent); }
+    td.warn   { color: var(--warn); }
+
+    .total-row td {
+      border-top: 1px solid var(--border);
+      font-weight: 500;
+      background: var(--bg);
+    }
+
+    /* ── REMINDER ── */
+    .reminder-block {
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+    }
+
+    .reminder-icon {
+      font-size: 1.1rem;
+      margin-top: 0.1rem;
+      flex-shrink: 0;
+    }
+
+    .reminder-text { font-size: 0.82rem; color: var(--muted); line-height: 1.6; }
+    .reminder-text strong { color: var(--warn); font-weight: 400; }
+
+    /* ── DISCLAIMER ── */
+    .disclaimer {
+      font-size: 0.7rem;
+      color: var(--muted);
+      line-height: 1.7;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── SCORE BAR ── */
+    .score-bar-wrap { margin-top: 0.75rem; }
+    .score-bar-bg {
+      height: 2px;
+      background: var(--border);
+      width: 100%;
+    }
+    .score-bar-fill {
+      height: 2px;
+      background: var(--accent);
+      transition: width 0.6s ease;
+    }
+    .score-label {
+      font-size: 0.62rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .tranche-card, .summary-stat, .opp-table-wrap {
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .tranche-card:nth-child(1) { animation-delay: 0.05s; }
+    .tranche-card:nth-child(2) { animation-delay: 0.10s; }
+    .tranche-card:nth-child(3) { animation-delay: 0.15s; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>The Lazy Cash App</h1>
+  <p>Cash optimisation · Illustrative modelling only</p>
+</header>
+
+<main>
+
+  <!-- ── INPUT PANEL ── -->
+  <div class="panel">
+    <div class="panel-label">Your Cash Position</div>
+
+    <div class="field">
+      <label>Total cash available (USD)</label>
+      <div class="input-prefix">
+        <span>$</span>
+        <input type="number" id="totalCash" placeholder="100000" min="0" />
+      </div>
+    </div>
+
+    <div class="panel-label" style="margin-top:1.5rem;">Liquidity Tranches</div>
+
+    <div class="field">
+      <label>Needed within 30 days</label>
+      <div class="input-prefix">
+        <span>$</span>
+        <input type="number" id="t30" placeholder="0" min="0" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Needed within 90 days</label>
+      <div class="input-prefix">
+        <span>$</span>
+        <input type="number" id="t90" placeholder="0" min="0" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Available for 180 days or longer</label>
+      <div class="input-prefix">
+        <span>$</span>
+        <input type="number" id="t180" placeholder="0" min="0" />
+      </div>
+    </div>
+
+    <div class="tranche-status" id="trancheStatus"></div>
+
+    <div class="cash-rate-row">
+      <label>Your current cash rate (%)</label>
+      <div class="input-prefix" style="flex:1">
+        <input type="number" id="cashRate" placeholder="2.50" step="0.1" min="0" max="20" style="padding-left:0.85rem" />
+      </div>
+    </div>
+
+    <button id="run" disabled>Optimise My Cash →</button>
+  </div>
+
+  <!-- ── INFO PANEL ── -->
+  <div class="panel">
+    <div class="panel-label">How It Works</div>
+    <p style="color:var(--muted);font-size:0.82rem;line-height:1.9;margin-bottom:1.25rem;">
+      Enter your total cash and split it across three time-based tranches. The app scores
+      each ETF in our curated dataset on yield, total expense ratio (TER), credit quality,
+      and average daily volume — then recommends the highest-scoring fund per tranche.
+    </p>
+
+    <div style="display:grid;gap:0.75rem;margin-top:1rem;">
+      <div style="background:var(--bg);padding:1rem;border-left:2px solid var(--accent)">
+        <div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:0.3rem;">30 Days</div>
+        <div style="font-size:0.78rem;color:var(--muted);">Capital preservation priority. Ultra-short T-bills and money market ETFs. Credit quality weighted highest.</div>
+      </div>
+      <div style="background:var(--bg);padding:1rem;border-left:2px solid var(--accent-dim)">
+        <div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent-dim);margin-bottom:0.3rem;">90 Days</div>
+        <div style="font-size:0.78rem;color:var(--muted);">Balanced yield and safety. Short-duration Treasury and investment-grade bond ETFs.</div>
+      </div>
+      <div style="background:var(--bg);padding:1rem;border-left:2px solid var(--muted)">
+        <div style="font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.3rem;">180 Days+</div>
+        <div style="font-size:0.78rem;color:var(--muted);">Yield optimisation. Short-to-medium duration corporate and government bond ETFs.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--border);font-size:0.72rem;color:var(--muted);">
+      ETF data sourced from fund factsheets · Snapshot: May 2025 · USD-denominated funds only
+    </div>
+  </div>
+
+  <!-- ── RESULTS ── -->
+  <div id="results">
+
+    <!-- Summary bar -->
+    <div class="summary-bar">
+      <div class="summary-stat">
+        <div class="stat-label">Blended Yield</div>
+        <div class="stat-value" id="sumBlended">—</div>
+        <div class="stat-sub">Weighted across all tranches</div>
+      </div>
+      <div class="summary-stat">
+        <div class="stat-label">Projected Earnings</div>
+        <div class="stat-value" id="sumEarnings">—</div>
+        <div class="stat-sub">Over your liquidity windows</div>
+      </div>
+      <div class="summary-stat">
+        <div class="stat-label">vs. Sitting in Cash</div>
+        <div class="stat-value" id="sumOppCost">—</div>
+        <div class="stat-sub">Additional yield captured</div>
+      </div>
+    </div>
+
+    <!-- Tranche cards -->
+    <div class="tranche-grid" id="trancheGrid"></div>
+
+    <!-- Opportunity cost table -->
+    <div class="opp-table-wrap">
+      <div class="panel-label" style="padding:1.25rem 1.5rem 0;">Opportunity Cost Breakdown</div>
+      <table id="oppTable">
+        <thead>
+          <tr>
+            <th>Tranche</th>
+            <th>Allocation</th>
+            <th>ETF Projected Earnings</th>
+            <th>Cash Earnings</th>
+            <th>Difference</th>
+          </tr>
+        </thead>
+        <tbody id="oppTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Reminder -->
+    <div class="reminder-block" id="reminderBlock"></div>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+      This tool provides illustrative modelling only and does not constitute financial advice. ETF metrics reflect a point-in-time snapshot sourced from fund factsheets (May 2025) and may not reflect current figures. Past yield is not indicative of future performance. Always verify fund data directly with the issuer before making investment decisions.
+    </div>
+
+  </div>
+</main>
+
+<script src="data.js"></script>
+<script src="scoring.js"></script>
+<script>
+
+  const $ = id => document.getElementById(id);
+
+  const inputs = {
+    totalCash: $('totalCash'),
+    t30:       $('t30'),
+    t90:       $('t90'),
+    t180:      $('t180'),
+    cashRate:  $('cashRate'),
+  };
+
+  function getVal(el) { return parseFloat(el.value) || 0; }
+
+  function fmt(n) {
+    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function validate() {
+    const total = getVal(inputs.totalCash);
+    const sum   = getVal(inputs.t30) + getVal(inputs.t90) + getVal(inputs.t180);
+    const status = $('trancheStatus');
+    const btn    = $('run');
+
+    if (total <= 0) {
+      status.textContent = '';
+      status.className = 'tranche-status';
+      btn.disabled = true;
+      return;
+    }
+
+    const diff = Math.abs(sum - total);
+
+    if (diff < 1) {
+      status.textContent = '✓ Tranches balance';
+      status.className = 'tranche-status ok';
+      btn.disabled = false;
+    } else if (sum > total) {
+      status.textContent = `Over by ${fmt(sum - total)} — reduce your tranches`;
+      status.className = 'tranche-status over';
+      btn.disabled = true;
+    } else {
+      status.textContent = `${fmt(total - sum)} unallocated`;
+      status.className = 'tranche-status under';
+      btn.disabled = total > 0 && sum > 0;
+    }
+  }
+
+  Object.values(inputs).forEach(el => el.addEventListener('input', validate));
+
+  $('run').addEventListener('click', () => {
+    const totalCash = getVal(inputs.totalCash);
+    const cashRate  = getVal(inputs.cashRate) || 2.5;
+    const tranches  = {
+      30:  getVal(inputs.t30),
+      90:  getVal(inputs.t90),
+      180: getVal(inputs.t180)
+    };
+
+    const recommendations = getRecommendations(tranches);
+    const blendedYield    = getBlendedYield(recommendations, totalCash);
+    const oppCost         = getOpportunityCost(recommendations, totalCash, cashRate);
+
+    renderResults(recommendations, blendedYield, oppCost, cashRate);
+  });
+
+  function renderResults(recs, blended, opp, cashRate) {
+    // Summary bar
+    $('sumBlended').textContent  = blended + '%';
+    $('sumEarnings').textContent = fmt(opp.ladderedEarnings);
+    $('sumOppCost').textContent  = fmt(opp.opportunityCost);
+
+    // Tranche cards
+    const grid = $('trancheGrid');
+    grid.innerHTML = '';
+
+    const bucketLabels = { 30: '30 Days', 90: '90 Days', 180: '180 Days+' };
+
+    for (const bucket of [30, 90, 180]) {
+      if (!recs[bucket]) continue;
+      const { etf, allocation, projectedEarnings } = recs[bucket];
+      const scorePercent = Math.round(etf.composite * 100);
+
+      const card = document.createElement('div');
+      card.className = 'tranche-card';
+      card.innerHTML = `
+        <div class="tranche-header">
+          <span class="tranche-badge">${bucketLabels[bucket]}</span>
+          <span class="tranche-alloc">${fmt(allocation)}</span>
+        </div>
+        <div class="etf-ticker">${etf.ticker}</div>
+        <div class="etf-name">${etf.name}<br><span style="color:var(--muted);font-size:0.68rem;">${etf.issuer}</span></div>
+        <div class="etf-metrics">
+          <div class="metric">
+            <div class="metric-label">Yield</div>
+            <div class="metric-value highlight">${etf.yield}%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">TER</div>
+            <div class="metric-value">${etf.ter}%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">AUM</div>
+            <div class="metric-value">$${etf.aum}B</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Credit</div>
+            <div class="metric-value">${etf.creditLabel}</div>
+          </div>
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-bg"><div class="score-bar-fill" style="width:${scorePercent}%"></div></div>
+          <div class="score-label">Composite score: ${scorePercent}/100</div>
+        </div>
+        <div class="projected-earnings">
+          <span class="pe-label">Projected earnings</span>
+          <span class="pe-value">${fmt(projectedEarnings)}</span>
+        </div>
+      `;
+      grid.appendChild(card);
+    }
+
+    // Opportunity cost table
+    const tbody = $('oppTableBody');
+    tbody.innerHTML = '';
+
+    let totalLaddered = 0;
+    let totalCashEarn = 0;
+
+    for (const bucket of [30, 90, 180]) {
+      if (!recs[bucket]) continue;
+      const { etf, allocation, projectedEarnings } = recs[bucket];
+      const cashEarn = allocation * (cashRate / 100) * (parseInt(bucket) / 365);
+      const diff = projectedEarnings - cashEarn;
+      totalLaddered += projectedEarnings;
+      totalCashEarn += cashEarn;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${bucketLabels[bucket]} · ${etf.ticker}</td>
+        <td>${fmt(allocation)}</td>
+        <td class="accent">${fmt(projectedEarnings)}</td>
+        <td>${fmt(cashEarn)}</td>
+        <td class="${diff >= 0 ? 'accent' : 'warn'}">${diff >= 0 ? '+' : ''}${fmt(diff)}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    const totalDiff = totalLaddered - totalCashEarn;
+    const totalRow = document.createElement('tr');
+    totalRow.className = 'total-row';
+    totalRow.innerHTML = `
+      <td>Total</td>
+      <td>—</td>
+      <td class="accent">${fmt(totalLaddered)}</td>
+      <td>${fmt(totalCashEarn)}</td>
+      <td class="${totalDiff >= 0 ? 'accent' : 'warn'}">${totalDiff >= 0 ? '+' : ''}${fmt(totalDiff)}</td>
+    `;
+    tbody.appendChild(totalRow);
+
+    // Reminder
+    const reminderBlock = $('reminderBlock');
+    const reminders = [];
+    if (recs[90])  reminders.push(`<strong>90-day window:</strong> Review your ${recs[90].etf.ticker} position in approximately 60 days to assess rollover or redemption.`);
+    if (recs[180]) reminders.push(`<strong>180-day window:</strong> Set a calendar reminder to review your ${recs[180].etf.ticker} position in 150 days.`);
+
+    reminderBlock.innerHTML = reminders.length
+      ? `<div class="reminder-icon">⏱</div><div class="reminder-text">${reminders.join('<br><br>')}</div>`
+      : '';
+
+    // Show results
+    const resultsEl = $('results');
+    resultsEl.classList.add('visible');
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  validate();
+</script>
+</body>
+</html>
