@@ -33,20 +33,20 @@
 
     /* ── HEADER ── */
     header {
-      border-bottom: 1px solid var(--border);
-      padding: 2rem 3rem;
-      display: flex;
-      align-items: baseline;
-      gap: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 3rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
     }
 
     header h1 {
-      font-family: var(--serif);
-      font-size: 2rem;
-      font-weight: 300;
-      font-style: italic;
-      color: var(--accent);
-      letter-spacing: -0.02em;
+  font-family: var(--mono);
+  font-size: 1.5rem;
+  font-weight: 400;
+  font-style: normal;
+  color: var(--accent);
+  letter-spacing: 0.04em;
     }
 
     header p {
@@ -433,10 +433,13 @@
 </head>
 <body>
 
-<header>
-  <h1>The Lazy Cash App</h1>
-  <p>Cash optimisation · Illustrative modelling only</p>
-</header>
+  <header>
+    <img src="logo.png" alt="Lazy Cash App" style="width:56px;height:56px;border-radius:6px;" />
+    <div>
+      <h1>The Lazy Cash App</h1>
+      <p>Cash optimisation · Illustrative modelling only</p>
+    </div>
+  </header>
 
 <main>
 
@@ -747,10 +750,4 @@
     // Show results
     const resultsEl = $('results');
     resultsEl.classList.add('visible');
-    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  validate();
-</script>
-</body>
-</html>
+    resultsEl.scroll
